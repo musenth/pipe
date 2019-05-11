@@ -16,12 +16,22 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // SPRING DATA
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    
+    // SPRING WEB
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // JSON
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    
+    // KOTLIN
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+
+    // TESTING STUFF
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.2'
 }
 
 compileKotlin {

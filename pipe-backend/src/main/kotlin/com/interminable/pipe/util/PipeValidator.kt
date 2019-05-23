@@ -12,7 +12,7 @@ class PipeValidator {
      */
     fun isGraphValid(project: PipeProject): Boolean {
         val links = project.links
-        links.forEach { values ->
+        links.values.forEach { values ->
             values.forEach {
                 if (it >= links.size) return false
             }
@@ -36,7 +36,7 @@ class PipeValidator {
     }
 
     private fun isCyclicUtil(
-            links: List<List<Int>>,
+            links: Map<Int, List<Int>>,
             i: Int,
             visited: BooleanArray,
             recStack: BooleanArray
@@ -52,7 +52,7 @@ class PipeValidator {
         recStack[i] = true
         val children = links[i]
 
-        for (c in children)
+        for (c in children!!)
             if (isCyclicUtil(links, c, visited, recStack))
                 return true
 

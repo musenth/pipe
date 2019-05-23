@@ -14,10 +14,10 @@ class PipeValidatorTests {
     @Test
     @DisplayName("1. Если граф не содержит связей с несуществующими вершинами, возвращается true")
     fun t1_isGraphValid_withValidGraph_mustReturnTrue() {
-        val links = mutableListOf(
-                mutableListOf(1, 2),
-                mutableListOf(0),
-                mutableListOf(0, 1)
+        val links = mutableMapOf(
+                0 to mutableListOf(1, 2),
+                1 to mutableListOf(0),
+                2 to mutableListOf(0, 1)
         )
         val project = PipeProject(
                 name = "",
@@ -29,10 +29,10 @@ class PipeValidatorTests {
     @Test
     @DisplayName("2. Если граф содержит вершины, которые не существуют, возвращается false")
     fun t2_isGraphValid_withInvalidGraph_mustReturnFalse() {
-        val links = mutableListOf(
-                mutableListOf(1, 2),
-                mutableListOf(0, 6),
-                mutableListOf(0, 3)
+        val links = mutableMapOf(
+                0 to mutableListOf(1, 2),
+                1 to mutableListOf(0, 6),
+                2 to mutableListOf(0, 3)
         )
         val project = PipeProject(
                 name = "",
@@ -44,10 +44,10 @@ class PipeValidatorTests {
     @Test
     @DisplayName("3. Если граф содержит циклы, проверка на циклы возвращает true")
     fun t3_isGraphCycled_withCycledGraph_mustReturnTrue() {
-        val links = mutableListOf(
-                mutableListOf(1, 2),
-                mutableListOf(0),
-                mutableListOf(0, 1)
+        val links = mutableMapOf(
+                0 to mutableListOf(1, 2),
+                1 to mutableListOf(0),
+                2 to mutableListOf(0, 1)
         )
         val project = PipeProject(
                 name = "",
@@ -59,8 +59,8 @@ class PipeValidatorTests {
     @Test
     @DisplayName("4. Если в графе есть вершины, которые связаны с собой, проверка на циклы возвращает true")
     fun t4_isGraphCycled_withCycledGraph_mustReturnTrue() {
-        val links = mutableListOf(
-                mutableListOf(0)
+        val links = mutableMapOf(
+                0 to mutableListOf(0)
         )
         val project = PipeProject(
                 name = "",
@@ -72,10 +72,10 @@ class PipeValidatorTests {
     @Test
     @DisplayName("5. Если граф не содержит циклы, проверка на циклы возвращает false")
     fun t5_isGraphCycled_withCycledGraph_mustReturnFalse() {
-        val links = mutableListOf(
-                mutableListOf(1),
-                mutableListOf(2),
-                mutableListOf()
+        val links = mutableMapOf(
+                0 to mutableListOf(1),
+                1 to mutableListOf(2),
+                2 to mutableListOf()
         )
         val project = PipeProject(
                 name = "",

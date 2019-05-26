@@ -1,7 +1,16 @@
+### Backend build ###
 .gradle
 build/
 out/
 !pipe-backend/gradle/wrapper/gradle-wrapper.jar
+
+### Frontend build ###
+.DS_Store
+node_modules/
+/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 ### IntelliJ IDEA ###
 .idea
@@ -9,3 +18,10 @@ out/
 *.iml
 *.ipr
 /out/
+
+### WebStorm ###
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

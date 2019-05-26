@@ -14,6 +14,6 @@ fun main(args: Array<String>) {
 }
 
 // TASKS:
-// DONE (1) Complete run method
-// TODO (2) Add validation and PipeResult to task-interactive methods
+// TODO (1) Add validation and PipeResult to task-interactive methods
+// TODO (2) Add logs
 // SKIPPED (3) Code tests for Service-layer (OPTIONAL)

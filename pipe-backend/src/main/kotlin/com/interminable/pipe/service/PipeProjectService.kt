@@ -41,7 +41,11 @@ class PipeProjectService(
     /**
      * Returns the list of projects
      */
-    fun getAllProjects() = repository.findAll()
+    fun getAllProjects(): List<PipeProject> {
+        LOGGER.info("Returned all projects")
+        return repository.findAll()
+    }
+
 
     /**
      * Chooses the project to edit

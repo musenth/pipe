@@ -50,94 +50,151 @@ class PipeProjectService(
     /**
      * Chooses the project to edit
      */
-    fun chooseProject(name: String) = repository.findByName(name)
+    fun chooseProject(name: String): PipeProject? {
+        LOGGER.info("Returned the project with the name '$name'")
+        return repository.findByName(name)
+    }
 
     /**
      * Creates a project with given name
      */
-    fun createProject(name: String): Boolean {
+    fun createProject(name: String): PipeResult {
         val used = repository.findByName(name)
-        if (used != null) return false
+        if (used != null) {
+            return PipeResult(
+                    PipeValidationStatus.ERROR,
+                    mutableListOf("The project with the name '$name' is already exists")
+            )
+        }
         repository.save(PipeProject(name = name))
-        return true
+        LOGGER.info("Created the project with the name $name")
+        return PipeResult()
     }
 
     /**
      * Saves the state of the project
      */
-    fun saveProject(project: PipeProject) = repository.save(project)
+    fun saveProject(project: PipeProject): PipeResult {
+        repository.save(project)
+        LOGGER.info("Saved the project with the name '${project.name}'")
+        return PipeResult()
+    }
 
     /**
      * Deletes the project
      */
-    fun deleteProject(name: String) = repository.deleteByName(name)
+    fun deleteProject(name: String): PipeResult {
+        repository.deleteByName(name)
+        LOGGER.info("Removed the project with the name $name")
+        return PipeResult()
+    }
 
     /**
      * Returns all available tasks loaded to the specified directory
      */
-    fun showAllTasks(): List<String> = File(props.taskFilesLocation).listFiles().map { it.name }
+    fun showAllTasks(): List<String> {
+        LOGGER.info("Returned all tasks from the directory ${props.taskFilesLocation}")
+        return File(props.taskFilesLocation).listFiles().map { it.name }
+    }
 
     /**
      * Adds a task to a project
      */
-    fun addTask(projectName: String, task: PipeTask) {
-        val project = repository.findByName(projectName) ?: return
+    fun addTask(projectName: String, task: PipeTask): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         project.tasks.add(task)
         repository.save(project)
+        LOGGER.info("Added the task with id '${task.id}' to the project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**
      * Deletes a task with specified ID from a project
      */
-    fun deleteTask(projectName: String, taskId: Int) {
-        val project = repository.findByName(projectName) ?: return
+    fun deleteTask(projectName: String, taskId: Int): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         project.tasks.removeAt(taskId)
         repository.save(project)
+        LOGGER.info("Deleted the task with id '$taskId' to the project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**
      * Sets a properties collection to a task of a project
      */
-    fun setProperties(projectName: String, taskId: Int, properties: MutableList<String>) {
-        val project = repository.findByName(projectName) ?: return
+    fun setProperties(projectName: String, taskId: Int, properties: MutableList<String>): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         project.tasks[taskId].properties = properties
         repository.save(project)
+        LOGGER.info("Set properties: $properties to the task with id '$taskId' in project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**
      * Adds all properties from collection to a task in project
      */
-    fun addProperties(projectName: String, taskId: Int, properties: List<String>) {
-        val project = repository.findByName(projectName) ?: return
+    fun addProperties(projectName: String, taskId: Int, properties: List<String>): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         project.tasks[taskId].properties.addAll(properties)
         repository.save(project)
+        LOGGER.info("Added properties: $properties to the task with id '$taskId' in project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**
      * Changes coordinates of a task location in GUI
      */
-    fun changeTaskLocation(projectName: String, taskId: Int, x: Int, y: Int) {
-        val project = repository.findByName(projectName) ?: return
+    fun changeTaskLocation(projectName: String, taskId: Int, x: Int, y: Int): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
+        val oldX = project.tasks[taskId].x_location
+        val oldY = project.tasks[taskId].y_location
         project.tasks[taskId].x_location = x
         project.tasks[taskId].y_location = y
         repository.save(project)
+        LOGGER.info("Changed the task (id '$taskId') location from {$oldX, $oldY} to {$x, $y}")
+        return PipeResult()
     }
 
     /**
      * Adds a link between two tasks
      */
-    fun addLink(projectName: String, inputTaskId: Int, outputTaskId: Int) {
-        val project = repository.findByName(projectName) ?: return
+    fun addLink(projectName: String, inputTaskId: Int, outputTaskId: Int): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         if (project.links[inputTaskId]!!.isEmpty()) project.links[inputTaskId] = mutableListOf(outputTaskId)
         else project.links[inputTaskId]!!.add(outputTaskId)
+        LOGGER.info("Added a link between tasks with IDs $inputTaskId and $outputTaskId in the project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**
      * Deletes a link between two tasks
      */
-    fun deleteLink(projectName: String, inputTaskId: Int, outputTaskId: Int) {
-        val project = repository.findByName(projectName) ?: return
+    fun deleteLink(projectName: String, inputTaskId: Int, outputTaskId: Int): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
         if (project.links[inputTaskId]!!.isEmpty()) project.links[inputTaskId]!!.remove(outputTaskId)
+        LOGGER.info("Deleted a link between tasks with IDs $inputTaskId and $outputTaskId in the project with the name '$projectName'")
+        return PipeResult()
     }
 
     /**

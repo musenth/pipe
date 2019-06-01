@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Service
 import java.io.File
 import java.time.OffsetDateTime
@@ -23,7 +24,7 @@ import kotlin.concurrent.timer
 @Service
 class PipeProjectService(
         private val props: PipeProperties
-) {
+) : CommandLineRunner {
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(PipeProjectService::class.java)
@@ -37,6 +38,19 @@ class PipeProjectService(
     private val validator = PipeValidator()
 
     private val timers: MutableMap<String, Timer> = mutableMapOf()
+
+    /**
+     * Repairing the state
+     */
+    override fun run(vararg args: String?) {
+        repository.findAll()
+                .filter {
+                    it.status == PipeProjectStatus.RUNNING
+                }
+                .forEach {
+                    run(it.name)
+                }
+    }
 
     /**
      * Returns the list of projects

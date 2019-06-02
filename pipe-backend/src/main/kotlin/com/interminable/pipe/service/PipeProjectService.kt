@@ -16,7 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Service
 import java.io.File
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.timer
@@ -48,7 +51,8 @@ class PipeProjectService(
                     it.status == PipeProjectStatus.RUNNING
                 }
                 .forEach {
-                    run(it.name)
+                    it.status = PipeProjectStatus.READY
+                    run(it)
                 }
     }
 
@@ -60,11 +64,53 @@ class PipeProjectService(
         return repository.findAll()
     }
 
+    /**
+     * Changes the startDate field of the project
+     */
+    fun changeStartDate(projectName: String, startDate: String): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        project.startDate = formatter.parse(startDate, LocalDateTime::from)
+        repository.save(project)
+        LOGGER.info("Changed the startDate field of the project with the name '$projectName'")
+        return PipeResult()
+    }
 
     /**
-     * Chooses the project to edit
+     * Changes the period field of the project
      */
-    fun chooseProject(name: String): PipeProject? {
+    fun changePeriod(projectName: String, period: Long): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
+        project.period = period
+        repository.save(project)
+        LOGGER.info("Changed the period field of the project with the name '$projectName'")
+        return PipeResult()
+    }
+
+    /**
+     * Changes the startTaskId field of the project
+     */
+    fun changeStartId(projectName: String, startId: Int): PipeResult {
+        val project = repository.findByName(projectName) ?: return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project with the name '$projectName' not found")
+        )
+        project.startTaskId = startId
+        repository.save(project)
+        LOGGER.info("Changed the startId field of the project with the name '$projectName'")
+        return PipeResult()
+    }
+
+    /**
+     * Returns the project to edit
+     */
+    fun getProject(name: String): PipeProject? {
         LOGGER.info("Returned the project with the name '$name'")
         return repository.findByName(name)
     }
@@ -77,7 +123,7 @@ class PipeProjectService(
         if (used != null) {
             return PipeResult(
                     PipeValidationStatus.ERROR,
-                    mutableListOf("The project with the name '$name' is already exists")
+                    mutableListOf("The project with the name '$name' already exists")
             )
         }
         repository.save(PipeProject(name = name))
@@ -106,9 +152,9 @@ class PipeProjectService(
     /**
      * Returns all available tasks loaded to the specified directory
      */
-    fun showAllTasks(): List<String> {
+    fun getAllTasks(): List<String> {
         LOGGER.info("Returned all tasks from the directory ${props.taskFilesLocation}")
-        return File(props.taskFilesLocation).listFiles().map { it.name }
+        return File(props.taskFilesLocation).listFiles().map { it.absolutePath }
     }
 
     /**
@@ -192,8 +238,9 @@ class PipeProjectService(
                 PipeValidationStatus.ERROR,
                 mutableListOf("Project with the name '$projectName' not found")
         )
-        if (project.links[inputTaskId]!!.isEmpty()) project.links[inputTaskId] = mutableListOf(outputTaskId)
+        if (project.links[inputTaskId].isNullOrEmpty()) project.links[inputTaskId] = mutableListOf(outputTaskId)
         else project.links[inputTaskId]!!.add(outputTaskId)
+        repository.save(project)
         LOGGER.info("Added a link between tasks with IDs $inputTaskId and $outputTaskId in the project with the name '$projectName'")
         return PipeResult()
     }
@@ -206,9 +253,34 @@ class PipeProjectService(
                 PipeValidationStatus.ERROR,
                 mutableListOf("Project with the name '$projectName' not found")
         )
-        if (project.links[inputTaskId]!!.isEmpty()) project.links[inputTaskId]!!.remove(outputTaskId)
+        if (project.links[inputTaskId]!!.isNotEmpty()) project.links[inputTaskId]!!.remove(outputTaskId)
+        repository.save(project)
         LOGGER.info("Deleted a link between tasks with IDs $inputTaskId and $outputTaskId in the project with the name '$projectName'")
         return PipeResult()
+    }
+
+    fun run(project: PipeProject): PipeResult {
+        if (project.status == PipeProjectStatus.RUNNING) return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project is already running")
+        )
+        val result = validator.isGraphCycled(project)
+        if (result.status == PipeValidationStatus.ERROR) return result
+        if (!validator.isGraphValid(project)) return PipeResult(
+                PipeValidationStatus.ERROR,
+                mutableListOf("Project's graph is invalid")
+        )
+        timers[project.name] = timer(
+                project.name,
+                false,
+                Date.from(project.startDate.toInstant(OffsetDateTime.now().offset)),
+                project.period
+        ) {
+            runDAG(project)
+        }
+        project.status = PipeProjectStatus.RUNNING
+        repository.save(project)
+        return PipeResult(PipeValidationStatus.OK)
     }
 
     /**
@@ -219,31 +291,7 @@ class PipeProjectService(
                 PipeValidationStatus.ERROR,
                 mutableListOf("There is no project with name $projectName")
         )
-        if (project.status == PipeProjectStatus.INVALID) return PipeResult(
-                PipeValidationStatus.ERROR,
-                mutableListOf("Project is invalid! Fix all of the problems and try again")
-        )
-        if (project.status == PipeProjectStatus.RUNNING) return PipeResult(
-                PipeValidationStatus.ERROR,
-                mutableListOf("Project is already running")
-        )
-        if (validator.isGraphCycled(project)) return PipeResult(
-                PipeValidationStatus.ERROR,
-                mutableListOf("Project's graph is cycled")
-        )
-        if (!validator.isGraphValid(project)) return PipeResult(
-                PipeValidationStatus.ERROR,
-                mutableListOf("Project's graph is invalid")
-        )
-        timers[projectName] = timer(
-                projectName,
-                false,
-                Date.from(project.startDate.toInstant(OffsetDateTime.now().offset)),
-                project.period
-        ) {
-            runDAG(project)
-        }
-        return PipeResult(PipeValidationStatus.OK)
+        return run(project)
     }
 
     fun stop(projectName: String): PipeResult {
@@ -256,6 +304,7 @@ class PipeProjectService(
                 mutableListOf("There is no running project with name $projectName")
         )
         project.status = PipeProjectStatus.READY
+        repository.save(project)
         return PipeResult(PipeValidationStatus.OK)
     }
 

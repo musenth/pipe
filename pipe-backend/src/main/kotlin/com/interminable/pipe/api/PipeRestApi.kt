@@ -5,6 +5,7 @@ import com.interminable.pipe.entity.PipeTask
 import com.interminable.pipe.service.PipeProjectService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 @RestController
 class PipeRestApi {
@@ -15,20 +16,38 @@ class PipeRestApi {
     @GetMapping("/getAllProjects")
     fun getAllProjects() = service.getAllProjects()
 
-    @GetMapping("/chooseProject")
-    fun chooseProject(@RequestParam name: String) = service.chooseProject(name)
+    @GetMapping("/getProject")
+    fun getProject(@RequestParam name: String) = service.getProject(name)
 
-    @PostMapping("/createProject")
-    fun createProject(@RequestParam name: String) = service.createProject("name")
+    @PutMapping("/changeStartDate/{name}/{startDate}")
+    fun changeStartDate(
+            @PathVariable name: String,
+            @PathVariable startDate: String
+    ) = service.changeStartDate(name, startDate)
+
+    @PutMapping("/changePeriod/{name}/{period}")
+    fun changePeriod(
+            @PathVariable name: String,
+            @PathVariable period: Long
+    ) = service.changePeriod(name, period)
+
+    @PutMapping("/changeStartId/{name}/{startId}")
+    fun changeStartId(
+            @PathVariable name: String,
+            @PathVariable startId: Int
+    ) = service.changeStartId(name, startId)
+
+    @PostMapping("/createProject/{name}")
+    fun createProject(@PathVariable name: String) = service.createProject(name)
 
     @PutMapping("/saveProject")
     fun saveProject(@RequestBody project: PipeProject) = service.saveProject(project)
 
-    @DeleteMapping("/deleteProject")
-    fun deleteMapping(@RequestParam name: String) = service.deleteProject(name)
+    @DeleteMapping("/deleteProject/{name}")
+    fun deleteProject(@PathVariable name: String) = service.deleteProject(name)
 
-    @GetMapping("/showAllProjects")
-    fun showAllProjects() = service.showAllTasks()
+    @GetMapping("/getAllTasks")
+    fun getAllTasks() = service.getAllTasks()
 
     // NOTE methods are called as "addSomething" but actually updates the project - that's why the PUT HTTP method is used
 
@@ -38,7 +57,7 @@ class PipeRestApi {
             @RequestBody task: PipeTask
     ) = service.addTask(projectName, task)
 
-    @DeleteMapping("/deleteTask/{projectName}/{taskId}")
+    @PutMapping("/deleteTask/{projectName}/{taskId}")
     fun deleteTask(
             @PathVariable projectName: String,
             @PathVariable taskId: Int
@@ -73,7 +92,7 @@ class PipeRestApi {
             @PathVariable outputId: Int
     ) = service.addLink(projectName, inputId, outputId)
 
-    @DeleteMapping("/deleteLink/{projectName}/{inputId}/{outputId}")
+    @PutMapping("/deleteLink/{projectName}/{inputId}/{outputId}")
     fun deleteLink(
             @PathVariable projectName: String,
             @PathVariable inputId: Int,

@@ -1,9 +1,9 @@
 package com.interminable.pipe
 
 import com.interminable.pipe.entity.PipeProject
+import com.interminable.pipe.entity.enums.PipeValidationStatus
 import com.interminable.pipe.util.PipeValidator
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -53,7 +53,9 @@ class PipeValidatorTests {
                 name = "",
                 links = links
         )
-        assertTrue(underTest.isGraphCycled(project))
+        val result = underTest.isGraphCycled(project)
+        assertEquals(PipeValidationStatus.ERROR, result.status)
+        println(result.errors)
     }
 
     @Test
@@ -66,7 +68,9 @@ class PipeValidatorTests {
                 name = "",
                 links = links
         )
-        assertTrue(underTest.isGraphCycled(project))
+        val result = underTest.isGraphCycled(project)
+        assertEquals(PipeValidationStatus.ERROR, result.status)
+        println(result.errors)
     }
 
     @Test
@@ -81,6 +85,6 @@ class PipeValidatorTests {
                 name = "",
                 links = links
         )
-        assertFalse(underTest.isGraphCycled(project))
+        assertEquals(PipeValidationStatus.OK, underTest.isGraphCycled(project).status)
     }
 }
